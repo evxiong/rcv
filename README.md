@@ -1,5 +1,5 @@
 # RCV
-RCV is a user-friendly [web app](https://tinyurl.com/evxiong-rcv) that allows you to conduct ranked-choice voting in Google Forms. Try it out [here](https://tinyurl.com/evxiong-rcv)!
+RCV is a user-friendly [web app](https://tinyurl.com/rcv-v1) that allows you to conduct ranked-choice voting in Google Forms. Try it out [here](https://tinyurl.com/rcv-v1)!
 
 It's as easy as 1-2-3:
 
@@ -14,7 +14,7 @@ RCV calculates results using the [Scottish STV](https://blog.opavote.com/2016/11
 
 ## How to use
 
-1. Open the [RCV web app](https://tinyurl.com/evxiong-rcv) and connect to your Google account (this allows RCV to create the election form in your Google Drive).
+1. Open the [RCV web app](https://tinyurl.com/rcv-v1) and connect to your Google account (this allows RCV to create the election form in your Google Drive).
 2. Upload a Markdown (.md) file containing your election's information, making sure to follow the same format as [example.md](https://raw.githubusercontent.com/evxiong/rcv/main/example.md). Then, click the `Create Form` button.
 3. You will get editable and shareable links to the newly created Google Form ballot. Share the shareable link with your voters. Voters can now submit their votes.
 4. To calculate the results of the election, click the `Get Results` button. This automatically closes the form so that new votes cannot be submitted. You will get the winners of the election and a round-by-round breakdown of the STV process.
