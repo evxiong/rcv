@@ -197,7 +197,7 @@ class Election {
     while (this.winners.length < this.seats) {
       if (this.remainingCandidates.size === this.seats - this.winners.length) {
         var sortedCanInds = Array.from(this.remainingCandidates).sort(
-          function (a, b) {
+          (a, b) => {
             if (this.counts.get(a)[1].eq(this.counts.get(b)[1])) return 0;
             else if (this.counts.get(a)[1].gt(this.counts.get(b)[1])) return 1;
             else return -1;
