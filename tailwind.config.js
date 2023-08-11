@@ -8,7 +8,6 @@ export default {
     extend: {
       colors: {
         'purple': '#6546E2',
-        'gray': '#444444',
       },
       fontFamily: {
         'hanken': ['Hanken Grotesk', 'sans-serif'],

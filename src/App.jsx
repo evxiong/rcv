@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import './index.css';
 
+
 function Button({ text, onButtonClick, clickable }) {
   return (
-    <button onClick={clickable ? onButtonClick : ()=>""} className={`${clickable ? "bg-purple hover:opacity-90" : "bg-gray-300 cursor-not-allowed"} mt-4 w-full rounded-md h-9 text-white font-normal text-xs border-gray-300 border`}>
+    <button onClick={clickable ? onButtonClick : () => ""} className={`${clickable ? "bg-purple hover:opacity-90" : "bg-gray-300 cursor-not-allowed"} mt-4 w-full rounded-md h-9 text-white font-normal text-xs border-gray-300 border`}>
       {text}
     </button>
   );
@@ -52,9 +53,132 @@ function Link({ text, link, step }) {
     <>
       <div className="text-gray-800 text-ss mt-5">{text}</div>
       <div className="mt-2 rounded-md h-9 bg-zinc-100 text-xs pl-4 pr-2 text-gray-500 flex justify-between gap-2 items-center">
-        <a className="font-mono hover:underline text-ellipsis overflow-clip whitespace-nowrap" target="_blank" rel="noopener" href={link}>{link}</a>
+        <a className="font-mono hover:underline text-ellipsis overflow-hidden whitespace-nowrap" target="_blank" rel="noopener" href={link}>{link}</a>
         <button onClick={onCopy} onMouseEnter={() => setCopied(false)} className={`${copied ? "text-green-500" : "text-gray-500"} bg-gray-200 py-1 px-2 rounded-md hover:opacity-90`}>{copied ? "Copied" : "Copy"}</button>
       </div>
+    </>
+  );
+}
+
+function Chart({ chartData, chartInd, curInd, chartMax, officeInd, step }) {
+  useEffect(() => {
+    google.charts.load('visualization', '1.0', { packages: ['corechart'] });
+    google.charts.setOnLoadCallback(drawChart);
+
+    function drawChart() {
+      var data = new google.visualization.DataTable();
+      data.addColumn('string', 'Candidate');
+      data.addColumn('number', 'Votes');
+      data.addColumn({ type: 'string', role: 'tooltip' });
+      data.addColumn({ type: 'string', role: 'style' });
+      data.addColumn('number', 'Received');
+      data.addColumn({ type: 'string', role: 'tooltip' });
+      data.addColumn('number', 'Transferred');
+      data.addColumn({ type: 'string', role: 'tooltip' });
+      data.addColumn('number', 'Quota');
+      data.addColumn('number', 'Quota');
+      data.addColumn({ type: 'string', role: 'tooltip' });
+
+      data.addRows(chartData);
+
+      var paddingHeight = 40;
+      var rowHeight = data.getNumberOfRows() * 45;
+      var chartHeight = rowHeight + paddingHeight;
+
+      var options = {
+        seriesType: 'bars',
+        orientation: 'vertical',
+        series: {
+          3: { type: 'steppedArea', color: '#6546E2', areaOpacity: 0, enableInteractivity: false, lineDashStyle: [8, 4] },
+          4: { type: 'line', lineWidth: 0 },
+        },
+        bar: { groupWidth: '75%' },
+        colors: ['#f5cc73', '#46e26a', '#e25046', '#6546E2'],
+        legend: {
+          position: 'none',
+        },
+        dataOpacity: 0.8,
+        height: chartHeight,
+        chartArea: {
+          height: rowHeight,
+          width: 300,
+        },
+
+        fontName: 'Hanken Grotesk',
+        isStacked: true,
+        hAxis: {
+          baselineColor: '#888888',
+          minValue: 0,
+          maxValue: chartMax,
+        },
+        vAxis: {
+          textPosition: 'in',
+          textStyle: {
+            fontSize: 11,
+            color: 'black',
+            auraColor: 'none'
+          }
+        },
+      };
+      var chart = new google.visualization.ComboChart(document.getElementById('chart_div_' + officeInd.toString() + '_' + chartInd.toString()));
+      chart.draw(data, options);
+    }
+  }, [step, curInd]);
+
+  return (
+    <div id={'chart_div_' + officeInd.toString() + '_' + chartInd.toString()} className={`${curInd !== chartInd ? 'hidden' : ''} mx-auto border mt-4 border-gray-300 p-2 rounded-md`} />
+  );
+}
+
+function Breakdown({ roundTitles, roundDescs, roundData, roundMax, officeInd, step }) {
+  const [curValue, setCurValue] = useState("1");
+  const numRounds = roundTitles.length;
+
+  useEffect(() => {
+    setCurValue("1");
+  }, [step]);
+
+  function handleChange(e) {
+    setCurValue(e.target.value);
+  }
+
+  function decrement() {
+    if (curValue !== "1") {
+      setCurValue((parseInt(curValue) - 1).toString());
+    }
+  }
+
+  function increment() {
+    if (curValue !== numRounds.toString()) {
+      setCurValue((parseInt(curValue) + 1).toString());
+    }
+  }
+
+  return (
+    <>
+      <div className="flex flex-row justify-between select-none">
+        <select value={curValue} onChange={handleChange} className="border border-gray-200 text-gray-600 font-medium max-w-[250px] rounded-md p-1 text-xs">
+          {
+            roundTitles.map((roundTitle, i) =>
+              <option value={(i + 1).toString()} className={`${roundTitle.endsWith(' elected') ? 'text-purple' : ''}`}>{(i + 1).toString() + ' - ' + roundTitle}</option>
+            )
+          }
+        </select>
+        <div className="flex flex-row gap-4 text-xs items-center text-gray-400">
+          <p onClick={decrement} className="underline hover:text-gray-600 hover:cursor-pointer">Prev</p>
+          <p onClick={increment} className="underline hover:text-gray-600 hover:cursor-pointer">Next</p>
+        </div>
+      </div>
+      {
+        roundData.map((d, i) =>
+          <Chart key={i} chartData={d} chartInd={i + 1} curInd={parseInt(curValue)} chartMax={roundMax} officeInd={officeInd} step={step}  /> // chartInd starts at 1
+        )
+      }
+      {
+        roundDescs.map((d, i) =>
+          <p key={i} className={`${parseInt(curValue) !== (i + 1) ? 'hidden' : ''} text-xs text-gray-600 mt-4`}>{d}</p>
+        )
+      }
     </>
   );
 }
@@ -64,9 +188,12 @@ function App() {
   const [load, setLoad] = useState(false);
   const [creatable, setCreatable] = useState(false);
   const [ballotObj, setBallotObj] = useState(null);
-  const [formId, setFormId] = useState(null);
-  const [editlink, setEditlink] = useState("");
-  const [sharelink, setSharelink] = useState("");
+  const [formId, setFormId] = useState('');
+  const [editLink, setEditLink] = useState('');
+  const [shareLink, setShareLink] = useState('');
+  const [folderName, setFolderName] = useState('');
+  const [folderLink, setFolderLink] = useState('');
+  const [results, setResults] = useState(null);
 
   useEffect(() => {
     window.addEventListener("beforeunload", alertUser);
@@ -118,7 +245,6 @@ function App() {
         }
 
         const htmlObject = document.createElement('div');
-        // console.log(htmlObject);
         htmlObject.innerHTML = html;
         var all = htmlObject.getElementsByTagName("*");
         var ballot = { "title": "", "desc": "", "elections": [] };
@@ -175,38 +301,69 @@ function App() {
 
   function onCreate(res) {
     setFormId(res[0]);
-    setEditlink(res[1]);
-    setSharelink(res[2]);
-    // document.getElementById('editlink').textContent = res[1];
-    // document.getElementById('sharelink').textContent = res[2];
+    setEditLink(res[1]);
+    setShareLink(res[2]);
+    setFolderName(res[3]);
+    setFolderLink(res[4]);
     increment();
   }
 
-  function handleNext() {
-    if (step === 1) {      
-      // google.script.run
-      //   .withSuccessHandler(onCreate)
-      //   .withFailureHandler(handleNoLoad)
-      //   .create(ballotObj);
-      // setLoad(true);
+  function onResults(res) {
+    setResults(res);
+    increment();
+  }
 
-      increment();
+  function handleValidId(res) {
+    setEditLink(res[0]);
+    setShareLink(res[1]);
+    setFolderName(res[2]);
+    setFolderLink(res[3]);
+    increment();
+  }
+
+  function handleInvalidId(res) {
+    setLoad(false);
+    window.alert("The form ID you input was invalid. Please try again.");
+  }
+
+  function handleChange(e) {
+    setFormId(e.target.value);
+  }
+
+  function handleNext() {
+    if (step === 1) {
+      if (formId === '') {
+        google.script.run
+          .withSuccessHandler(onCreate)
+          .withFailureHandler(handleNoLoad)
+          .create(ballotObj);
+        setLoad(true);
+      }
+      else {
+        google.script.run
+          .withSuccessHandler(handleValidId)
+          .withFailureHandler(handleInvalidId)
+          .testFormId(formId)
+        setLoad(true);
+      }
+
+      // increment();
     }
     else if (step === 2) {
-      // google.script.run
-      //   .withSuccessHandler(onResults)
-      //   .withFailureHandler(handleNoLoad)
-      //   .getResults(formId, ballotObj);
-      // setLoad(true);
-      
-      increment();
+      google.script.run
+        .withSuccessHandler(onResults)
+        .withFailureHandler(handleNoLoad)
+        .getResults(formId, ballotObj);
+      setLoad(true);
+
+      // increment();
     }
   }
 
   function handleNoLoad() {
     setLoad(false);
     let buttonText = (step === 1) ? "Create Form" : "Get Results";
-    window.alert("Could not connect to Google. Please click '" + buttonText + "' again.");
+    window.alert("Could not connect to Google / Exception thrown. Please click '" + buttonText + "' again.");
   }
 
   function increment() {
@@ -217,13 +374,25 @@ function App() {
   }
 
   function decrement() {
+    setLoad(false);
     if (step > 1) {
       setStep(step - 1);
     }
   }
 
   function handlePrev() {
-    decrement();
+    if (step === 3) {
+      google.script.run
+        .withSuccessHandler(() => decrement())
+        .withFailureHandler(() => setLoad(false))
+        .toggleForm(formId, true);
+      setLoad(true);
+    }
+    else {
+      decrement();
+    }
+
+    // decrement();
   }
 
   return (
@@ -236,14 +405,13 @@ function App() {
 
       <div className={`${load ? "" : "hidden"} select-none mt-8 mx-auto p-9 max-w-[420px] border flex flex-col items-center gap-3 justify-center border-gray-200 rounded-md`}>
         <Loader status={step} text={["Creating your form...", "Calculating results..."]} />
-        {/* <Button text="Advance" onButtonClick={increment}/> */}
       </div>
 
       <div className={`${step !== 1 || load ? "hidden" : ""} select-none mt-8 mx-auto p-9 max-w-[420px] border border-gray-200 rounded-md`}>
         <h2 className="text-lg font-medium">Create</h2>
         <hr className="mt-2 mb-3" />
         <p className="text-gray-800 text-ss">
-          To create an election form, upload a .md file with the same format as <a className="text-purple underline decoration-0 underline-offset-2 hover:opacity-90" href="#">example.md</a>.
+          To create an election form, upload a .md file with the same format as <a target="_blank" rel="noopener" className="text-purple hover:underline" href="https://raw.githubusercontent.com/evxiong/rcv/main/example.md">example.md</a>.
         </p>
         <div className="mt-4 border border-gray-300 text-xs rounded-md h-11 flex flex-row items-center justify-start gap-4 px-2">
           <label htmlFor="upload" className="bg-zinc-100 hover:bg-zinc-200 hover:cursor-pointer rounded w-24 text-center h-7 items-center flex justify-center">Choose file</label>
@@ -253,6 +421,12 @@ function App() {
         <Button text="Create Form" onButtonClick={() => handleNext()} clickable={creatable} />
       </div>
 
+      <div className={`${step !== 1 || load ? "hidden" : ""} select-none mt-8 mx-auto p-9 max-w-[420px] border border-gray-200 rounded-md`}>
+        <h3 className="text-sm font-medium text-gray-400">Optional</h3>
+        <p className="text-gray-400 text-xs mt-2">Use an existing RCV form by entering its form ID. The uploaded .md file must correspond to the Google Form with this ID.</p>
+        <input required value={formId} onChange={handleChange} type="text" id="formId" placeholder="Enter form ID here" className="mt-4 w-full border text-gray-500 border-gray-200 rounded-md text-xs h-8 px-2" />
+      </div>
+
       <div className={`${step !== 2 || load ? "hidden" : ""} select-none mt-8 mx-auto p-9 max-w-[420px] border border-gray-200 rounded-md`}>
         <div className="flex flex-row justify-between items-center">
           <h2 className="text-lg font-medium">Vote</h2>
@@ -260,23 +434,64 @@ function App() {
         </div>
         <hr className="mt-2 mb-3" />
         <p className="text-gray-800 text-ss">
-          Your election form has been created and is located in <span className="text-purple">My Drive</span>. It's time to vote!
+          Your election form has been created and is located in <a href={folderLink} target="_blank" rel="noopener" className="text-purple hover:underline">{folderName}</a>. It's time to vote!
         </p>
-        <Link text="Edit link:" step={step} link={editlink}/>
-        <Link text="Shareable link:" step={step} link={sharelink}/>
+        <Link text="Edit link:" step={step} link={editLink} />
+        <Link text="Shareable link:" step={step} link={shareLink} />
         <Button text="Get Results" onButtonClick={() => handleNext()} clickable={true} />
       </div>
 
-      <div className={`${step !== 3 || load ? "hidden" : ""} select-none mt-8 mx-auto p-9 max-w-[420px] border border-gray-200 rounded-md`}>
+      <div className={`${step !== 3 || load ? "hidden" : ""} mt-8 mx-auto p-9 max-w-[420px] border border-gray-200 rounded-md`}>
         <div className="flex flex-row justify-between items-center">
           <h2 className="text-lg font-medium">Results</h2>
           <p onClick={handlePrev} className="text-xs cursor-pointer hover:underline hover:text-zinc-500 text-zinc-400 font-normal">Go back to Vote</p>
         </div>
         <hr className="mt-2 mb-3" />
-      </div>
 
+        <p className="text-ss text-gray-800">The election form has been closed, and the results are in. To re-open the election, click 'Go back to Vote'. These results were calculated using the <a target="_blank" rel="noopener" className="text-purple hover:underline" href="https://blog.opavote.com/2016/11/plain-english-explanation-of-scottish.html">Scottish STV</a> rules.</p>
+
+        <h2 className="text-black text-md font-medium mt-6">Winners</h2>
+        <hr className="mt-2 border-gray-200" />
+
+        {
+          results?.map((result, i) => {
+            return (
+              <div key={i}>
+                <h3 className="text-sm font-medium text-black mt-4">{result['title']}</h3>
+                <ol className="list-decimal list-outside ml-8 mt-1 text-sm text-gray-600 [&>li]:mb-1 [&>li]:text-ss">
+                  {
+                    result['winners'].map((winner, i) => {
+                      return (
+                        <li key={i}>{winner}</li>
+                      );
+                    })
+                  }
+                </ol>
+              </div>
+            );
+          })
+        }
+
+        {
+          results?.map((result, i) => {
+            return (
+              <div key={i}>
+                <div className="flex flex-row justify-between items-center mt-8">
+                  <h2 className="text-md font-medium max-w-[250px] break-words">{result['title']}</h2>
+                  <p className="text-xs text-zinc-600 font-normal">{result['seats'].toString() + ' seat' + (result['seats'] > 1 ? 's' : '') + ' open'}</p>
+                </div>
+                <hr className="mb-4 mt-2 border-gray-100" />
+                <Breakdown roundTitles={result['roundTitles']} roundDescs={result['roundDescs']} roundData={result['roundData']} roundMax={result['maxCount']} officeInd={i} step={step} />
+              </div>
+
+            );
+          })
+        }
+
+      </div>
+      
     </div>
   );
 }
 
-export default App
+export default App;
