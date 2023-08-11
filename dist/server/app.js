@@ -434,7 +434,7 @@ function create(ballotObj) {
     .setConfirmationMessage('Your vote has been counted.')
     .setCustomClosedFormMessage('The deadline to vote in this election has passed. Votes are no longer being counted.')
     .setLimitOneResponsePerUser(true)
-    .setRequireLogin(true)
+    // .setRequireLogin(true)
     .setShowLinkToRespondAgain(false);
   for (const election of ballotObj['elections']) {
     var gridItem = form.addGridItem()
@@ -498,7 +498,12 @@ function getResults(formId, ballotObj) {
 }
 
 function testFormId(formId) {
-  const form = FormApp.openById(formId);
+  var form = null;
+  try {
+    form = FormApp.openById(formId);
+  } catch (e) {
+    return false;
+  }
   toggleForm(formId, true);
   var parents = DriveApp.getFileById(formId).getParents();
   var folder = parents.next();

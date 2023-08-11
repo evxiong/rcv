@@ -314,16 +314,22 @@ function App() {
   }
 
   function handleValidId(res) {
-    setEditLink(res[0]);
-    setShareLink(res[1]);
-    setFolderName(res[2]);
-    setFolderLink(res[3]);
-    increment();
+    if (res === false) {
+      setLoad(false);
+      window.alert("The form ID you input was invalid. Please try again.");
+    }
+    else {
+      setEditLink(res[0]);
+      setShareLink(res[1]);
+      setFolderName(res[2]);
+      setFolderLink(res[3]);
+      increment();
+    }
   }
 
   function handleInvalidId(res) {
     setLoad(false);
-    window.alert("The form ID you input was invalid. Please try again.");
+    window.alert("Could not connect to Google. Please try again.");
   }
 
   function handleChange(e) {

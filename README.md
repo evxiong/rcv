@@ -26,7 +26,6 @@ RCV calculates results using the [Scottish STV](https://blog.opavote.com/2016/11
 By default, the created election form has the following settings:
 - Do not collect email addresses
 - Do not allow response editing
-- Restrict to users in your organization (if applicable)
 - Limit to 1 response
 
 Regarding rankings:
