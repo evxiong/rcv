@@ -3,18 +3,21 @@ const { Big } = Bigjs;
 Big.DP = 5;
 Big.RM = Big.roundDown;
 
-const DESC = string_to_bold("Instructions") + "\nYou may rank as many or as little candidates as you would like for each office. Mathematically, leaving candidates unranked means you are completely indifferent to them, potentially leaving you at the whim of others' rankings.";
-const SPIEL = "Rank as many candidates as you would like. Select no more than one candidate per column. You may need to swipe/scroll to view all possible rankings.";
+const DESC =
+  string_to_bold("Instructions") +
+  "\nYou may rank as many or as little candidates as you would like for each office. Mathematically, leaving candidates unranked means you are completely indifferent to them, potentially leaving you at the whim of others' rankings.";
+const SPIEL =
+  "Rank as many candidates as you would like. Select no more than one candidate per column. You may need to swipe/scroll to view all possible rankings.";
 
 const STATUS_TO_COLOR = [
-  'color: #d9d9d9; stroke-width: 0;',
-  'color: #888888; stroke-width: 0;',
-  'color: #f5cc73; stroke-width: 0;',
-  'color: #b6a4fc; stroke-width: 0;'
+  "color: #d9d9d9; stroke-width: 0;",
+  "color: #888888; stroke-width: 0;",
+  "color: #f5cc73; stroke-width: 0;",
+  "color: #b6a4fc; stroke-width: 0;",
 ];
 
 function doGet(e) {
-  return HtmlService.createTemplateFromFile('ui/index').evaluate();
+  return HtmlService.createTemplateFromFile("ui\\index").evaluate();
 }
 
 class Vote {
@@ -30,12 +33,20 @@ class Ballot {
     this.submissions = submissions; // total number of submissions (including empty)
     this.elections = []; // array of Election objects
     for (const [i, election] of ballotObj["elections"].entries()) {
-      this.elections.push(new Election(election["title"], election["seats"], election["candidates"], votes[i], submissions));
+      this.elections.push(
+        new Election(
+          election["title"],
+          election["seats"],
+          election["candidates"],
+          votes[i],
+          submissions
+        )
+      );
     }
   }
 
   run() {
-    var results = this.elections.map(election => election.run());
+    var results = this.elections.map((election) => election.run());
     return results;
   }
 }
@@ -46,22 +57,24 @@ class Election {
     this.seats = seats; // number of open seats
     this.candidates = candidates; // array of candidate names
     this.votes = votes; // array of Vote objects - empty votes already eliminated
-    this.totalVotes = totalVotes // total num of votes, including empty votes
-    this.validVotes = votes.length // total num of valid (non-empty) votes
+    this.totalVotes = totalVotes; // total num of votes, including empty votes
+    this.validVotes = votes.length; // total num of valid (non-empty) votes
     this.counts = new Map(); // <candidate index> -> [<candidate name>, <vote count>, <status>]
-      // '0' is exhausted pile
-      // status: 0=exhausted, 1=eliminated, 2=continuing, 3=elected
+    // '0' is exhausted pile
+    // status: 0=exhausted, 1=eliminated, 2=continuing, 3=elected
     this.winners = []; // array of candidate names
     this.rounds = []; // each elm is {name: <title of round>, desc: <description of round>, counts: <this.counts snapshot>}
 
-    this.remainingCandidates = new Set(Array.from({ length: candidates.length }, (e, i) => (i + 1).toString()));
+    this.remainingCandidates = new Set(
+      Array.from({ length: candidates.length }, (e, i) => (i + 1).toString())
+    );
     this.droopQuota = Math.floor(this.votes.length / (this.seats + 1)) + 1;
 
     // populate counts with first round votes
     for (let i = 0; i < this.candidates.length; i++) {
       this.counts.set((i + 1).toString(), [candidates[i], new Big(0), 2]);
     }
-    this.counts.set('0', ['Exhausted', new Big(0), 0]);
+    this.counts.set("0", ["Exhausted", new Big(0), 0]);
 
     for (let v of this.votes) {
       let new_count = this.counts.get(v.vote[0])[1].plus(new Big(1));
@@ -69,9 +82,16 @@ class Election {
     }
 
     this.rounds.push({
-      'name': 'First preferences',
-      'desc': 'Counts of first preferences. ' + this.validVotes.toFixed(5) + ' valid (non-empty) votes out of ' + this.totalVotes.toFixed(5) + ' total votes. Quota is ' + this.droopQuota.toFixed(5) + '.',
-      'counts': _.cloneDeep(this.counts),
+      name: "First preferences",
+      desc:
+        "Counts of first preferences. " +
+        this.validVotes.toFixed(5) +
+        " valid (non-empty) votes out of " +
+        this.totalVotes.toFixed(5) +
+        " total votes. Quota is " +
+        this.droopQuota.toFixed(5) +
+        ".",
+      counts: _.cloneDeep(this.counts),
     });
   }
 
@@ -80,9 +100,9 @@ class Election {
 
     // first round is special case
     let a = [];
-    for (const value of this.rounds[0]['counts'].values()) {
+    for (const value of this.rounds[0]["counts"].values()) {
       a.push([
-        value[0] + '\n' + value[1].toFixed(5), // candidate (str)
+        value[0] + "\n" + value[1].toFixed(5), // candidate (str)
         value[1].toNumber(), // votes (number)
         value[1].toFixed(5), // votes (str)
         STATUS_TO_COLOR[value[2]], // votes color (str)
@@ -92,7 +112,7 @@ class Election {
         null, // transferred votes (str)
         this.droopQuota, // quota (number)
         this.droopQuota, // quota (number)
-        'Quota: ' + this.droopQuota.toFixed(5), // quota (str)
+        "Quota: " + this.droopQuota.toFixed(5), // quota (str)
       ]);
     }
     chartData.push(a);
@@ -105,45 +125,44 @@ class Election {
       // if current less, votes is curr count, received is null, transferred is diff
       // if current equal, votes is curr count, received is null, transferred is null
       let a = [];
-      const curIt = this.rounds[i]['counts'].values();
-      const prvIt = this.rounds[i - 1]['counts'].values();
+      const curIt = this.rounds[i]["counts"].values();
+      const prvIt = this.rounds[i - 1]["counts"].values();
       let curObj = curIt.next();
       let prvObj = prvIt.next();
 
       while (!curObj.done && !prvObj.done) {
         if (curObj.value[1].gt(prvObj.value[1])) {
           a.push([
-            curObj.value[0] + '\n' + curObj.value[1].toFixed(5), // candidate and total votes (str)
+            curObj.value[0] + "\n" + curObj.value[1].toFixed(5), // candidate and total votes (str)
             prvObj.value[1].toNumber(), // votes (number)
             prvObj.value[1].toFixed(5), // votes (str)
             STATUS_TO_COLOR[prvObj.value[2]], // votes color (str)
             curObj.value[1].minus(prvObj.value[1]).toNumber(), // received votes (number)
-            'Received: ' + curObj.value[1].minus(prvObj.value[1]).toFixed(5), // received votes (str)
+            "Received: " + curObj.value[1].minus(prvObj.value[1]).toFixed(5), // received votes (str)
             null, // transferred votes (number)
             null, // transferred votes (str)
             this.droopQuota, // quota (number)
             this.droopQuota, // quota (number)
-            'Quota: ' + this.droopQuota.toFixed(5), // quota (str)
+            "Quota: " + this.droopQuota.toFixed(5), // quota (str)
           ]);
-        }
-        else if (curObj.value[1].lt(prvObj.value[1])) {
+        } else if (curObj.value[1].lt(prvObj.value[1])) {
           a.push([
-            curObj.value[0] + '\n' + curObj.value[1].toFixed(5), // candidate and total votes (str)
+            curObj.value[0] + "\n" + curObj.value[1].toFixed(5), // candidate and total votes (str)
             curObj.value[1].toNumber(), // votes (number)
             curObj.value[1].toFixed(5), // votes (str)
             STATUS_TO_COLOR[curObj.value[2]], // votes color (str)
             null, // received votes (number)
             null, // received votes (str)
             prvObj.value[1].minus(curObj.value[1]).toNumber(), // transferred votes (number)
-            'Transferred: ' + prvObj.value[1].minus(curObj.value[1]).toFixed(5), // transferred votes (str)
+            "Transferred: " + prvObj.value[1].minus(curObj.value[1]).toFixed(5), // transferred votes (str)
             this.droopQuota, // quota (number)
             this.droopQuota, // quota (number)
-            'Quota: ' + this.droopQuota.toFixed(5), // quota (str)
+            "Quota: " + this.droopQuota.toFixed(5), // quota (str)
           ]);
-        }
-        else { // eq
+        } else {
+          // eq
           a.push([
-            curObj.value[0] + '\n' + curObj.value[1].toFixed(5), // candidate and total votes (str)
+            curObj.value[0] + "\n" + curObj.value[1].toFixed(5), // candidate and total votes (str)
             curObj.value[1].toNumber(), // votes (number)
             curObj.value[1].toFixed(5), // votes (str)
             STATUS_TO_COLOR[curObj.value[2]], // vote color (str)
@@ -153,7 +172,7 @@ class Election {
             null, // transferred votes (str)
             this.droopQuota, // quota (number)
             this.droopQuota, // quota (number)
-            'Quota: ' + this.droopQuota.toFixed(5), // quota (str)
+            "Quota: " + this.droopQuota.toFixed(5), // quota (str)
           ]);
         }
 
@@ -169,13 +188,15 @@ class Election {
 
   dump() {
     for (const round of this.rounds) {
-      console.log(round['name'] + "\n" + round['desc'] + "\n" + this.round_to_str(round));
+      console.log(
+        round["name"] + "\n" + round["desc"] + "\n" + this.round_to_str(round)
+      );
     }
   }
 
   round_to_str(round) {
     var s = "";
-    for (const value of round['counts'].values()) {
+    for (const value of round["counts"].values()) {
       s += value[0] + ":\t\t" + value[1].toFixed(5) + "\n";
     }
     return s;
@@ -184,7 +205,7 @@ class Election {
   getMaxCount() {
     var maxCount = new Big(0);
     for (const round of this.rounds) {
-      for (const count of round['counts'].values()) {
+      for (const count of round["counts"].values()) {
         if (count[1].gt(maxCount)) {
           maxCount = count[1];
         }
@@ -204,29 +225,39 @@ class Election {
           }
         );
 
-        sortedCanInds.forEach(canInd => { this.winners.push(this.counts.get(canInd)[0]); this.counts.get(canInd)[2] = 3; });
-        let names = sortedCanInds.map(elm => this.counts.get(elm)[0]).join(', ');
+        sortedCanInds.forEach((canInd) => {
+          this.winners.push(this.counts.get(canInd)[0]);
+          this.counts.get(canInd)[2] = 3;
+        });
+        let names = sortedCanInds
+          .map((elm) => this.counts.get(elm)[0])
+          .join(", ");
 
         this.rounds.push({
-          'name': names + " elected",
-          'desc': names + " elected, as equally many candidates and unfilled seats remain. Election is complete.",
-          'counts': _.cloneDeep(this.counts),
+          name: names + " elected",
+          desc:
+            names +
+            " elected, as equally many candidates and unfilled seats remain. Election is complete.",
+          counts: _.cloneDeep(this.counts),
         });
 
         break;
       }
       var elected = this.exceedsQuota(); // elected is cand ind with most votes who exceeded quota, or null
-      if (elected === null) { // no candidate exceeded quota, so drop lowest and transfer votes
+      if (elected === null) {
+        // no candidate exceeded quota, so drop lowest and transfer votes
         this.eliminateLowest();
-      }
-      else { // at least one candidate has exceeded quota
-        this.winners.push(this.counts.get(elected)[0]);;
+      } else {
+        // at least one candidate has exceeded quota
+        this.winners.push(this.counts.get(elected)[0]);
         this.counts.get(elected)[2] = 3;
         if (this.winners.length === this.seats) {
           this.rounds.push({
-            'name': this.counts.get(elected)[0] + " elected",
-            'desc': this.counts.get(elected)[0] + " has been elected, having reached the quota. All seats have been filled, so election is complete.",
-            'counts': _.cloneDeep(this.counts),
+            name: this.counts.get(elected)[0] + " elected",
+            desc:
+              this.counts.get(elected)[0] +
+              " has been elected, having reached the quota. All seats have been filled, so election is complete.",
+            counts: _.cloneDeep(this.counts),
           });
           break;
         }
@@ -235,27 +266,30 @@ class Election {
     }
 
     return {
-      'title': this.name, // name of office
-      'seats': this.seats, // number
-      'maxCount': this.getMaxCount(), // max votes in any round (to set max hAxis value)
-      'winners': this.winners, // array of cand names
-      'roundTitles': this.rounds.map(round => round['name']), // array of each round's title
-      'roundDescs': this.rounds.map(round => round['desc']), // array of each round's desc
-      'roundData': this.createChartData(), // round counts data used for Google Charts
+      title: this.name, // name of office
+      seats: this.seats, // number
+      maxCount: this.getMaxCount(), // max votes in any round (to set max hAxis value)
+      winners: this.winners, // array of cand names
+      roundTitles: this.rounds.map((round) => round["name"]), // array of each round's title
+      roundDescs: this.rounds.map((round) => round["desc"]), // array of each round's desc
+      roundData: this.createChartData(), // round counts data used for Google Charts
     };
   }
 
-  findMax(map, max=true) {
+  findMax(map, max = true) {
     // returns Set of maxCanInds
     var maxCnt = null;
     var maxCanInds = new Set();
     for (const [key, value] of map) {
       if (this.remainingCandidates.has(key)) {
-        if (maxCnt === null || (max && value[1].gt(maxCnt)) || (!max && value[1].lt(maxCnt))) {
+        if (
+          maxCnt === null ||
+          (max && value[1].gt(maxCnt)) ||
+          (!max && value[1].lt(maxCnt))
+        ) {
           maxCnt = value[1];
           maxCanInds = new Set([key]);
-        }
-        else if (value[1].eq(maxCnt)) {
+        } else if (value[1].eq(maxCnt)) {
           maxCanInds.add(key);
         }
       }
@@ -285,11 +319,14 @@ class Election {
       let curMaxCanInds = new Set();
       let curMap = this.rounds[i].counts;
       for (const maxCanInd of maxCanInds) {
-        if (curMaxCnt === null || (gt && curMap.get(maxCanInd)[1].gt(curMaxCnt)) || (!gt && curMap.get(maxCanInd)[1].lt(curMaxCnt))) {
+        if (
+          curMaxCnt === null ||
+          (gt && curMap.get(maxCanInd)[1].gt(curMaxCnt)) ||
+          (!gt && curMap.get(maxCanInd)[1].lt(curMaxCnt))
+        ) {
           curMaxCnt = curMap.get(maxCanInd)[1];
           curMaxCanInds = new Set([maxCanInd]);
-        }
-        else if (curMap.get(maxCanInd)[1].eq(curMaxCnt)) {
+        } else if (curMap.get(maxCanInd)[1].eq(curMaxCnt)) {
           curMaxCanInds.add(maxCanInd);
         }
       }
@@ -317,33 +354,36 @@ class Election {
           if (v.vote[i] !== null) {
             if (!this.remainingCandidates.has(v.vote[i])) {
               v.vote[i] = null;
-            }
-            else if (v.vote[i] === elected) {
+            } else if (v.vote[i] === elected) {
               v.vote[i] = null;
               let j = i + 1;
               let exhausted = true;
               while (j < v.vote.length) {
                 if (this.remainingCandidates.has(v.vote[j])) {
                   exhausted = false;
-                  let new_value = v.value.times(surplus.div(cur_votes)).round(5);
-                  this.counts.get(v.vote[j])[1] = this.counts.get(v.vote[j])[1].plus(new_value);
+                  let new_value = v.value
+                    .times(surplus.div(cur_votes))
+                    .round(5);
+                  this.counts.get(v.vote[j])[1] = this.counts
+                    .get(v.vote[j])[1]
+                    .plus(new_value);
                   v.value = new_value;
                   transferred_ballots += 1;
                   break;
-                }
-                else {
+                } else {
                   v.vote[j] = null;
                 }
                 j += 1;
               }
               if (exhausted) {
                 let new_value = v.value.times(surplus.div(cur_votes)).round(5);
-                this.counts.get('0')[1] = this.counts.get('0')[1].plus(new_value);
+                this.counts.get("0")[1] = this.counts
+                  .get("0")[1]
+                  .plus(new_value);
                 exhausted_ballots += 1;
               }
               break;
-            }
-            else {
+            } else {
               break;
             }
           }
@@ -354,9 +394,17 @@ class Election {
     this.remainingCandidates.delete(elected);
     this.counts.get(elected)[1] = this.counts.get(elected)[1].minus(surplus);
     this.rounds.push({
-      'name': this.counts.get(elected)[0] + " elected",
-      'desc': this.counts.get(elected)[0] + " has been elected, having reached the quota. Transferring surplus: " + transferred_ballots.toString() + " transferable ballots at fractional value of " + (surplus.div(cur_votes)).toFixed(5) + ', with ' + exhausted_ballots.toString() + " exhausted ballots.",
-      'counts': _.cloneDeep(this.counts),
+      name: this.counts.get(elected)[0] + " elected",
+      desc:
+        this.counts.get(elected)[0] +
+        " has been elected, having reached the quota. Transferring surplus: " +
+        transferred_ballots.toString() +
+        " transferable ballots at fractional value of " +
+        surplus.div(cur_votes).toFixed(5) +
+        ", with " +
+        exhausted_ballots.toString() +
+        " exhausted ballots.",
+      counts: _.cloneDeep(this.counts),
     });
   }
 
@@ -366,8 +414,7 @@ class Election {
     let minCanInd = null;
     if (minCanInds.size > 1) {
       minCanInd = this.backwardsTiebreak(minCanInds, false);
-    }
-    else {
+    } else {
       minCanInd = Array.from(minCanInds)[0];
     }
 
@@ -380,30 +427,29 @@ class Election {
         if (v.vote[i] !== null) {
           if (!this.remainingCandidates.has(v.vote[i])) {
             v.vote[i] = null;
-          }
-          else if (v.vote[i] === minCanInd) {
+          } else if (v.vote[i] === minCanInd) {
             v.vote[i] = null;
             let j = i + 1;
             let exhausted = true;
             while (j < v.vote.length) {
               if (this.remainingCandidates.has(v.vote[j])) {
                 exhausted = false;
-                this.counts.get(v.vote[j])[1] = this.counts.get(v.vote[j])[1].plus(v.value);
+                this.counts.get(v.vote[j])[1] = this.counts
+                  .get(v.vote[j])[1]
+                  .plus(v.value);
                 transferred_ballots += 1;
                 break;
-              }
-              else {
+              } else {
                 v.vote[j] = null;
               }
               j += 1;
             }
             if (exhausted) {
-              this.counts.get('0')[1] = this.counts.get('0')[1].plus(v.value);
+              this.counts.get("0")[1] = this.counts.get("0")[1].plus(v.value);
               exhausted_ballots += 1;
             }
             break;
-          }
-          else {
+          } else {
             break;
           }
         }
@@ -417,31 +463,54 @@ class Election {
     this.remainingCandidates.delete(minCanInd);
 
     this.rounds.push({
-      'name': elim + " eliminated",
-      'desc': elim + " has been eliminated after having the least votes. Transferring " + transferred_ballots.toString() + " transferable ballots, with " + exhausted_ballots.toString() + " exhausted ballots.",
-      'counts': _.cloneDeep(this.counts),
+      name: elim + " eliminated",
+      desc:
+        elim +
+        " has been eliminated after having the least votes. Transferring " +
+        transferred_ballots.toString() +
+        " transferable ballots, with " +
+        exhausted_ballots.toString() +
+        " exhausted ballots.",
+      counts: _.cloneDeep(this.counts),
     });
   }
 }
 
 function create(ballotObj) {
   // add formId to ballotObj, then save as temp .json file
-  var form = FormApp.create(ballotObj['title']);
+  var form = FormApp.create(ballotObj["title"]);
   form
-    .setDescription(ballotObj['desc'] + DESC)
+    .setDescription(ballotObj["desc"] + DESC)
     .setAllowResponseEdits(false)
     .setCollectEmail(false)
-    .setConfirmationMessage('Your vote has been counted.')
-    .setCustomClosedFormMessage('The deadline to vote in this election has passed. Votes are no longer being counted.')
+    .setConfirmationMessage("Your vote has been counted.")
+    .setCustomClosedFormMessage(
+      "The deadline to vote in this election has passed. Votes are no longer being counted."
+    )
     .setLimitOneResponsePerUser(true)
     // .setRequireLogin(true)
     .setShowLinkToRespondAgain(false);
-  for (const election of ballotObj['elections']) {
-    var gridItem = form.addGridItem()
-      .setTitle(string_to_bold(election['title'].toUpperCase()))
-      .setHelpText(string_to_bold('• ' + election['seats'] + ((election['seats'] > 1) ? ' seats open' : ' seat open')) + '\n\n' + election['desc'] + SPIEL)
-      .setRows(election['candidates'])
-      .setColumns(Array.from({length: election['candidates'].length}, (_, i) => i+1).map(elm => numberToOrdinal(elm)));
+  for (const election of ballotObj["elections"]) {
+    var gridItem = form
+      .addGridItem()
+      .setTitle(string_to_bold(election["title"].toUpperCase()))
+      .setHelpText(
+        string_to_bold(
+          "• " +
+            election["seats"] +
+            (election["seats"] > 1 ? " seats open" : " seat open")
+        ) +
+          "\n\n" +
+          election["desc"] +
+          SPIEL
+      )
+      .setRows(election["candidates"])
+      .setColumns(
+        Array.from(
+          { length: election["candidates"].length },
+          (_, i) => i + 1
+        ).map((elm) => numberToOrdinal(elm))
+      );
     var gridValidation = FormApp.createGridValidation()
       .setHelpText("Do not select more than one candidate per column.")
       .requireLimitOneResponsePerColumn()
@@ -455,7 +524,13 @@ function create(ballotObj) {
 
   console.log(form.getEditUrl());
   console.log(form.getPublishedUrl());
-  return [formId, form.getEditUrl(), form.getPublishedUrl(), folder.getName(), folder.getUrl()];
+  return [
+    formId,
+    form.getEditUrl(),
+    form.getPublishedUrl(),
+    folder.getName(),
+    folder.getUrl(),
+  ];
 }
 
 function collectVotes(formId) {
@@ -473,15 +548,16 @@ function collectVotes(formId) {
     itemResponses = formResponses[i].getItemResponses();
     for (let j = 0; j < itemResponses.length; j++) {
       const itemResponse = itemResponses[j];
-      const vote = itemResponse.getResponse()
-        .map((elm, i) => (elm === null) ? [elm, i+1] : [parseInt(elm), i+1])
+      const vote = itemResponse
+        .getResponse()
+        .map((elm, i) => (elm === null ? [elm, i + 1] : [parseInt(elm), i + 1]))
         .sort(function (a, b) {
           if (a[0] === null) return 1;
           if (b[0] === null) return -1;
-          return (a[0] < b[0]) ? -1 : 1;
+          return a[0] < b[0] ? -1 : 1;
         })
-        .filter(a => a[0])
-        .map(a => a[1].toString());
+        .filter((a) => a[0])
+        .map((a) => a[1].toString());
       votes[itemResponse.getItem().getIndex()].push(new Vote(vote));
     }
   }
@@ -507,18 +583,21 @@ function testFormId(formId) {
   toggleForm(formId, true);
   var parents = DriveApp.getFileById(formId).getParents();
   var folder = parents.next();
-  return [form.getEditUrl(), form.getPublishedUrl(), folder.getName(), folder.getUrl()];
+  return [
+    form.getEditUrl(),
+    form.getPublishedUrl(),
+    folder.getName(),
+    folder.getUrl(),
+  ];
 }
 
-function toggleForm(formId, open=null) {
+function toggleForm(formId, open = null) {
   const form = FormApp.openById(formId);
   if (open === null) {
     form.setAcceptingResponses(!form.isAcceptingResponses());
-  }
-  else if (open) {
+  } else if (open) {
     form.setAcceptingResponses(true);
-  }
-  else if (!open) {
+  } else if (!open) {
     form.setAcceptingResponses(false);
   }
 }
@@ -528,14 +607,11 @@ function numberToOrdinal(i) {
   var k = i % 100;
   if (j == 1 && k != 11) {
     return i + "st";
-  }
-  else if (j == 2 && k != 12) {
+  } else if (j == 2 && k != 12) {
     return i + "nd";
-  }
-  else if (j == 3 && k != 13) {
+  } else if (j == 3 && k != 13) {
     return i + "rd";
-  }
-  else {
+  } else {
     return i + "th";
   }
 }
@@ -549,16 +625,13 @@ function string_to_bold(s) {
 }
 
 function char_to_bold(c) {
-  if ('A' <= c && c <= 'Z') {
+  if ("A" <= c && c <= "Z") {
     return String.fromCodePoint(c.charCodeAt() + 120211);
-  }
-  else if ('a' <= c && c <= 'z') {
+  } else if ("a" <= c && c <= "z") {
     return String.fromCodePoint(c.charCodeAt() + 120205);
-  }
-  else if ('0' <= c && c <= '9') {
+  } else if ("0" <= c && c <= "9") {
     return String.fromCodePoint(c.charCodeAt() + 120764);
-  }
-  else {
+  } else {
     return c;
   }
 }
